@@ -10,11 +10,14 @@
         label { margin-top: 10px; }
         input, select, textarea { margin-bottom: 10px; padding: 5px; }
         button { margin-top: 10px; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #message { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
     </style>
 </head>
 <body>
     <h1>Add New Entry</h1>
-    <form action="/add_entry" method="POST">
+    <form id="entryForm">
         <label for="language">Language:</label>
         <select name="language" id="language" required>
             <option value="portuguese">Portuguese</option>
@@ -40,5 +43,30 @@
 
         <button type="submit">Add Entry</button>
     </form>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            
+            fetch('/add_entry', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('message').innerHTML = 'Entry added successfully!';
+                document.getElementById('message').className = 'success';
+                document.getElementById('output').value = '';
+                document.getElementById('ai').value = '';
+            })
+            .catch(error => {
+                document.getElementById('message').innerHTML = 'Error adding entry: ' + error;
+                document.getElementById('message').className = 'error';
+            });
+        });
+    </script>
 </body>
 </html>
