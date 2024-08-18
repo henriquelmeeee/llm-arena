@@ -27,14 +27,15 @@ AIs = {
     6: "Llama-3-8B"
 }
 
-SUPPORTED_LANGUAGES = ["portuguese", "english"]
+# TODO support foreign_language_votes in DB
+SUPPORTED_TOPICS = ["coding", "resumes", "foreign_language"]
 
 class Output(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     the_input = db.Column(db.String(50000), nullable=False)
     ai_id = db.Column(db.Integer, nullable=False)
-    language = db.Column(db.String(20), nullable=False)
+    topic = db.Column(db.String(20), nullable=False)
 
 class AI(db.Model):
     name = db.Column(db.String(64), nullable=False)
@@ -47,32 +48,32 @@ class AI(db.Model):
 def index():
     return render_template('index.html')
 
-@app.route("/<language>/")
-def select_output(language):
-    if language not in SUPPORTED_LANGUAGES:
-        return "Invalid language", 400
+@app.route("/<topic>/")
+def select_output(topic):
+    if topic not in SUPPORTED_TOPICS:
+        return "Invalid topic", 400
 
-    random_output_1 = Output.query.filter_by(language=language).order_by(db.func.random()).first()
+    random_output_1 = Output.query.filter_by(topic=topic).order_by(db.func.random()).first()
     if not random_output_1:
-        return "No outputs found for the specified language", 404
-    random_output_2 = Output.query.filter_by(language=language, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
+        return "No outputs found for the specified topic", 404
+    random_output_2 = Output.query.filter_by(topic=topic, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
     
     if not random_output_2:
         return "Not enough outputs for comparison", 404
 
     return render_template('compare.html', out1=random_output_1, out2=random_output_2)
 
-@app.route("/select/<language_and_id>")
+@app.route("/select/<topic_and_id>")
 @limiter.limit("1 per 2 seconds")
-def select_prefered(language_and_id):
+def select_prefered(topic_and_id):
     try:
-        language, output_id = language_and_id.split("_")
+        topic, output_id = topic_and_id.split("_")
         output_id = int(output_id)
     except ValueError:
         return "Invalid input format", 400
 
-    if language not in SUPPORTED_LANGUAGES:
-        return "Invalid language", 400
+    if topic not in SUPPORTED_TOPICS:
+        return "Invalid topic", 400
 
     output = Output.query.get(output_id)
     if not output:
@@ -82,10 +83,11 @@ def select_prefered(language_and_id):
     if not ai:
         return "AI not found", 404
 
-    if language == "portuguese":
-        ai.portuguese_votes += 1
-    elif language == "english":
-        ai.english_votes += 1
+    if topic == "coding":
+        ai.coding_votes += 1
+    elif topic == "resumes":
+        ai.resumes_votes += 1
+    # foreign_language here and etc
 
     db.session.commit()
 
@@ -108,18 +110,18 @@ def statistics():
     stats = db.session.query(
         AI.id,
         AI.name,
-        AI.english_votes,
-        AI.portuguese_votes,
-        (AI.english_votes + AI.portuguese_votes).label('total_votes')
-    ).order_by((AI.english_votes + AI.portuguese_votes).desc()).all()
+        AI.coding_votes,
+        AI.resumes_votes,
+        (AI.coding_votes + AI.resumes_votes).label('total_votes')
+    ).order_by((AI.coding_votes + AI.resumes_votes).desc()).all()
 
     formatted_stats = []
     for ai in stats:
         formatted_stats.append({
             'id': ai.id,
             'name': ai.name,
-            'english_votes': format_number(ai.english_votes),
-            'portuguese_votes': format_number(ai.portuguese_votes),
+            'english_votes': format_number(ai.coding_votes),
+            'portuguese_votes': format_number(ai.resumes_votes),
             'total_votes': format_number(ai.total_votes)
         })
 
@@ -146,15 +148,15 @@ def add_entry_form():
 
 @app.route('/add_entry', methods=['POST'])
 def add_entry():
-    language = request.form['language']
+    topic = request.form['topic']
     input_text = request.form['input']
     ai_id = int(request.form['ai'])
     output_text = request.form['output']
 
-    if language not in SUPPORTED_LANGUAGES:
-        return "Invalid language", 400
+    if topic not in SUPPORTED_TOPICS:
+        return "Invalid topic", 400
 
-    new_entry = Output(text=output_text, the_input=input_text, ai_id=ai_id, language=language)
+    new_entry = Output(text=output_text, the_input=input_text, ai_id=ai_id, topic=topic)
     db.session.add(new_entry)
     db.session.commit()
 
