@@ -19,9 +19,19 @@
     <h1>Add New Entry</h1>
     <form id="entryForm">
         <label for="topic">Topic:</label>
-        <select name="topic" id="topic" required>
+        <select class="form-select" id="topicSelect" required>
+            <option value="" selected disabled>Select a topic</option>
+            <option value="all">All</option>
             <option value="coding">Coding</option>
-            <option value="resumes">Resuming</option>
+            <option value="resuming">Resuming</option>
+            <option value="creative_writing">Creative Writing</option>
+            <option value="data_analysis">Data Analysis</option>
+            <option value="science">Science</option>
+            <option value="history">History</option>
+            <option value="philosophy">Philosophy</option>
+            <option value="mathematics">Mathematics</option>
+            <option value="quantum_physics">Quantum Physics</option>
+            <option value="extreme">Extreme</option>
         </select>
 
         <label for="input">Input:</label>
