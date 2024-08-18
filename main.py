@@ -177,7 +177,7 @@ def add_entry_form():
     if admin_mode:
         return render_template('admin.html')
 
-@app.route('/add_entry', methods=['POST'])
+@app.route('/add_entry/', methods=['POST'])
 def add_entry():
     topic = request.form['topic']
     input_text = request.form['input']
