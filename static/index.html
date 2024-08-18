@@ -12,54 +12,48 @@
         .container {
             max-width: 600px;
         }
+        header {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 1rem;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #007bff;
+        }
     </style>
 </head>
-<header>
-    <nav>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/statistics/">Leaderboard</a></li>
-        <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
-      </ul>
-    </nav>
-</header>
-<style>
-    header {
-      background-color: #f8f9fa;
-      padding: 1rem 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    nav ul {
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-    }
-    
-    nav ul li {
-      margin: 0 1rem;
-    }
-    
-    nav ul li a {
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-    
-    nav ul li a:hover {
-      color: #007bff;
-    }
-</style>
-
 <body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/statistics/">Leaderboard</a></li>
+                <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container mt-5">
         <h1 class="text-center mb-4">Welcome to LLM Arena</h1>
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">How do it works?</h5>
+                <h5 class="card-title">How does it work?</h5>
                 <p class="card-text">
                     1. Choose the topic that you prefer.<br>
                     2. Choose the output that you prefer.<br>
@@ -67,8 +61,8 @@
                 </p>
                 <form id="topicForm">
                     <div class="mb-3">
-                        <label for="topicSelect" class="form-label">Choose your topic:</label>
-                        <select name="topic" id="topic" required>
+                        <label for="topic" class="form-label">Choose your topic:</label>
+                        <select name="topic" id="topic" class="form-select" required>
                             <option value="" selected disabled>Select a topic</option>
                             <option value="all">All</option>
                             <option value="coding">Coding</option>
@@ -99,14 +93,14 @@
                 console.log("Form submitted");
                 event.preventDefault();
                 
-                const topicSelect = document.getElementById('topicSelect');
+                const topicSelect = document.getElementById('topic');
                 const selectedTopic = topicSelect.value;
                 console.log("Selected topic:", selectedTopic);
                 
                 if (selectedTopic) {
                     window.location.href = '/' + selectedTopic;
                 } else {
-                    alert('Select a topic before continuing');
+                    alert('Please select a topic before continuing');
                 }
             });
         });
