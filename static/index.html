@@ -68,10 +68,19 @@
                 <form id="topicForm">
                     <div class="mb-3">
                         <label for="topicSelect" class="form-label">Choose your topic:</label>
-                        <select class="form-select" id="topicSelect" required>
+                        <select name="topic" id="topic" required>
                             <option value="" selected disabled>Select a topic</option>
+                            <option value="all">All</option>
                             <option value="coding">Coding</option>
-                            <option value="resumes">Resuming</option>
+                            <option value="resuming">Resuming</option>
+                            <option value="creative_writing">Creative Writing</option>
+                            <option value="data_analysis">Data Analysis</option>
+                            <option value="science">Science</option>
+                            <option value="history">History</option>
+                            <option value="philosophy">Philosophy</option>
+                            <option value="mathematics">Mathematics</option>
+                            <option value="quantum_physics">Quantum Physics</option>
+                            <option value="extreme">Extreme</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Continue</button>
