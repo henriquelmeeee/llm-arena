@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Arena | Suggest input</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 1rem;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/statistics/">Leaderboard</a></li>
+                <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Suggest input for LLM Arena</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">If your suggestion gets accepted, it will be put in the list of samples in arena</h5>
+                <form id="suggestForm" action="/add-suggest/" method="POST">
+                    <div class="mb-3">
+                        <label for="inputSuggestion" class="form-label">Your suggestion:</label>
+                        <textarea class="form-control" id="inputSuggestion" name="inputSuggestion" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send suggestion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('suggestForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const inputSuggestion = document.getElementById('inputSuggestion').value;
+                if (inputSuggestion.trim() !== '') {
+                    this.submit();
+                } else {
+                    alert('Make your suggestion first.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
