@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, g, redirect
+from flask import Flask, render_template, request, g, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -10,7 +10,7 @@ app = Flask(__name__, template_folder="./static", static_folder="./static")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
+app.secret_key = "SDAKldjsafhlkhRIOAUYRH9aiuhrfsad(y)"
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
@@ -55,8 +55,6 @@ def select_output(language):
     random_output_1 = Output.query.filter_by(language=language).order_by(db.func.random()).first()
     if not random_output_1:
         return "No outputs found for the specified language", 404
-    print(f"Random output 1: {random_output_1}")
-    print(f"Random output 1 details: id={random_output_1.id}, text={random_output_1.text}, input={random_output_1.the_input}, ai_id={random_output_1.ai_id}, language={random_output_1.language}")
     random_output_2 = Output.query.filter_by(language=language, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
     
     if not random_output_2:
@@ -161,6 +159,31 @@ def add_entry():
     db.session.commit()
 
     return redirect("/admin/")
+
+@app.route("/suggest-specific-input/")
+def suggest_specific_input():
+    return render_template("suggest_specific_input.html")
+
+class Suggestion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    input_text = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+@app.route("/add-suggest/", methods=["POST"])
+@limiter.limit("5 per minute")
+def add_suggest():
+    input_suggestion = request.form.get('inputSuggestion')
+    
+    if not input_suggestion or input_suggestion.strip() == '':
+        flash('Your suggestion needs to be valid.', 'error')
+        return redirect("/suggest-specific-input/")
+    
+    new_suggestion = Suggestion(input_text=input_suggestion)
+    db.session.add(new_suggestion)
+    db.session.commit()
+    
+    flash('We got your suggestion. Thank you!', 'success')
+    return redirect("/suggest-specific-input/")
 
 if __name__ == '__main__':
     with app.app_context():
