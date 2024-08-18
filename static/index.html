@@ -61,17 +61,17 @@
             <div class="card-body">
                 <h5 class="card-title">How do it works?</h5>
                 <p class="card-text">
-                    1. Choose the language that you prefer.<br>
+                    1. Choose the topic that you prefer.<br>
                     2. Choose the output that you prefer.<br>
                     3. The AI that generated the output will receive points.
                 </p>
-                <form id="languageForm">
+                <form id="topicForm">
                     <div class="mb-3">
-                        <label for="languageSelect" class="form-label">Choose your language:</label>
-                        <select class="form-select" id="languageSelect" required>
-                            <option value="" selected disabled>Select a language</option>
-                            <option value="portuguese">Português</option>
-                            <option value="english">English</option>
+                        <label for="topicSelect" class="form-label">Choose your topic:</label>
+                        <select class="form-select" id="topicSelect" required>
+                            <option value="" selected disabled>Select a topic</option>
+                            <option value="coding">Coding</option>
+                            <option value="resumes">Resuming</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Continue</button>
@@ -86,18 +86,18 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             console.log("DOM fully loaded");
-            document.getElementById('languageForm').addEventListener('submit', function(event) {
+            document.getElementById('topicForm').addEventListener('submit', function(event) {
                 console.log("Form submitted");
                 event.preventDefault();
                 
-                const languageSelect = document.getElementById('languageSelect');
-                const selectedLanguage = languageSelect.value;
-                console.log("Selected language:", selectedLanguage);
+                const topicSelect = document.getElementById('topicSelect');
+                const selectedTopic = topicSelect.value;
+                console.log("Selected topic:", selectedTopic);
                 
-                if (selectedLanguage) {
-                    window.location.href = '/' + selectedLanguage;
+                if (selectedTopic) {
+                    window.location.href = '/' + selectedTopic;
                 } else {
-                    alert('Select a language before continuing');
+                    alert('Select a topic before continuing');
                 }
             });
         });
