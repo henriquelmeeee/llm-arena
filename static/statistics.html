@@ -78,9 +78,8 @@
                     <tr>
                         <th scope="col">Rank</th>
                         <th scope="col">Model</th>
-                        <th scope="col">Coding</th>
-                        <th scope="col">Resuming</th>
                         <th scope="col">Total votes</th>
+                        <th scope="col">Details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,16 +87,53 @@
                     <tr>
                         <th scope="row">{{ loop.index }}</th>
                         <td>{{ ai.name }}</td>
-                        <td>{{ ai.english_votes }}</td>
-                        <td>{{ ai.portuguese_votes }}</td>
                         <td>{{ ai.total_votes }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#detailsModal{{ ai.id }}">
+                                View Details
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <!--<a href="/" style="text-decoration: none;">Come back</a>-->
         </div>
     </div>
+
+    {% for ai in stats %}
+    <div class="modal fade" id="detailsModal{{ ai.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ ai.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel{{ ai.id }}">{{ ai.name }} Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Votes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Coding</td><td>{{ ai.coding_votes }}</td></tr>
+                            <tr><td>Resuming</td><td>{{ ai.resuming_votes }}</td></tr>
+                            <tr><td>Creative Writing</td><td>{{ ai.creative_writing_votes }}</td></tr>
+                            <tr><td>Data Analysis</td><td>{{ ai.data_analysis_votes }}</td></tr>
+                            <tr><td>Science</td><td>{{ ai.science_votes }}</td></tr>
+                            <tr><td>History</td><td>{{ ai.history_votes }}</td></tr>
+                            <tr><td>Philosophy</td><td>{{ ai.philosophy_votes }}</td></tr>
+                            <tr><td>Mathematics</td><td>{{ ai.mathematics_votes }}</td></tr>
+                            <tr><td>Quantum Physics</td><td>{{ ai.quantum_physics_votes }}</td></tr>
+                            <tr><td>Extreme</td><td>{{ ai.extreme_votes }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
