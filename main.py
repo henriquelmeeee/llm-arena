@@ -2,8 +2,7 @@ from flask import Flask, render_template, request, g, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import time
-import os
+import os, random, time
 
 
 app = Flask(__name__, template_folder="./static", static_folder="./static")
@@ -25,10 +24,10 @@ AIs = {
     4: "Llama-3.1-405B",
     5: "Llama-3-70B",
     6: "Llama-3-8B"
+    # TODO add more here and update the HTML lists also
 }
 
-# TODO support foreign_language_votes in DB
-SUPPORTED_TOPICS = ["coding", "resumes", "foreign_language"]
+SUPPORTED_TOPICS = ["all", "coding", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
 
 class Output(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,8 +40,16 @@ class AI(db.Model):
     name = db.Column(db.String(64), nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(100), nullable=False)
-    portuguese_votes = db.Column(db.Integer, default=0)
-    english_votes = db.Column(db.Integer, default=0)
+    coding_votes = db.Column(db.Integer, default=0)
+    resuming_votes = db.Column(db.Integer, default=0)
+    creative_writing_votes = db.Column(db.Integer, default=0)
+    data_analysis_votes = db.Column(db.Integer, default=0)
+    science_votes = db.Column(db.Integer, default=0)
+    history_votes = db.Column(db.Integer, default=0)
+    philosophy_votes = db.Column(db.Integer, default=0)
+    mathematics_votes = db.Column(db.Integer, default=0)
+    quantum_physics_votes = db.Column(db.Integer, default=0)
+    extreme_votes = db.Column(db.Integer, default=0)
 
 @app.route('/')
 def index():
@@ -53,10 +60,17 @@ def select_output(topic):
     if topic not in SUPPORTED_TOPICS:
         return "Invalid topic", 400
 
-    random_output_1 = Output.query.filter_by(topic=topic).order_by(db.func.random()).first()
+    if topic == "all":
+        # Select a random topic, excluding "all"
+        random_topic = random.choice([t for t in SUPPORTED_TOPICS if t != "all"])
+    else:
+        random_topic = topic
+
+    random_output_1 = Output.query.filter_by(topic=random_topic).order_by(db.func.random()).first()
     if not random_output_1:
         return "No outputs found for the specified topic", 404
-    random_output_2 = Output.query.filter_by(topic=topic, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
+    
+    random_output_2 = Output.query.filter_by(topic=random_topic, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
     
     if not random_output_2:
         return "Not enough outputs for comparison", 404
@@ -65,7 +79,7 @@ def select_output(topic):
 
 @app.route("/select/<topic_and_id>")
 @limiter.limit("1 per 2 seconds")
-def select_prefered(topic_and_id):
+def select_preferred(topic_and_id):
     try:
         topic, output_id = topic_and_id.split("_")
         output_id = int(output_id)
@@ -83,11 +97,9 @@ def select_prefered(topic_and_id):
     if not ai:
         return "AI not found", 404
 
-    if topic == "coding":
-        ai.coding_votes += 1
-    elif topic == "resumes":
-        ai.resumes_votes += 1
-    # foreign_language here and etc
+    # Update votes for the specific topic
+    if hasattr(ai, f"{output.topic}_votes"):
+        setattr(ai, f"{output.topic}_votes", getattr(ai, f"{output.topic}_votes") + 1)
 
     db.session.commit()
 
@@ -111,17 +123,36 @@ def statistics():
         AI.id,
         AI.name,
         AI.coding_votes,
-        AI.resumes_votes,
-        (AI.coding_votes + AI.resumes_votes).label('total_votes')
-    ).order_by((AI.coding_votes + AI.resumes_votes).desc()).all()
+        AI.resuming_votes,
+        AI.creative_writing_votes,
+        AI.data_analysis_votes,
+        AI.science_votes,
+        AI.history_votes,
+        AI.philosophy_votes,
+        AI.mathematics_votes,
+        AI.quantum_physics_votes,
+        AI.extreme_votes,
+        (AI.coding_votes + AI.resuming_votes + AI.creative_writing_votes + 
+         AI.data_analysis_votes + AI.science_votes + AI.history_votes + 
+         AI.philosophy_votes + AI.mathematics_votes + AI.quantum_physics_votes + 
+         AI.extreme_votes).label('total_votes')
+    ).order_by(db.desc('total_votes')).all()
 
     formatted_stats = []
     for ai in stats:
         formatted_stats.append({
             'id': ai.id,
             'name': ai.name,
-            'english_votes': format_number(ai.coding_votes),
-            'portuguese_votes': format_number(ai.resumes_votes),
+            'coding_votes': format_number(ai.coding_votes),
+            'resuming_votes': format_number(ai.resuming_votes),
+            'creative_writing_votes': format_number(ai.creative_writing_votes),
+            'data_analysis_votes': format_number(ai.data_analysis_votes),
+            'science_votes': format_number(ai.science_votes),
+            'history_votes': format_number(ai.history_votes),
+            'philosophy_votes': format_number(ai.philosophy_votes),
+            'mathematics_votes': format_number(ai.mathematics_votes),
+            'quantum_physics_votes': format_number(ai.quantum_physics_votes),
+            'extreme_votes': format_number(ai.extreme_votes),
             'total_votes': format_number(ai.total_votes)
         })
 
