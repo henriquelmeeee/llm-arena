@@ -19,8 +19,7 @@
     <h1>Add New Entry</h1>
     <form id="entryForm">
         <label for="topic">Topic:</label>
-        <select class="form-select" id="topicSelect" required>
-            <option value="" selected disabled>Select a topic</option>
+        <select class="form-select" id="topicSelect" name="topic" required>            <option value="" selected disabled>Select a topic</option>
             <option value="all">All</option>
             <option value="coding">Coding</option>
             <option value="resuming">Resuming</option>
@@ -61,7 +60,7 @@
             
             var formData = new FormData(this);
             
-            fetch('/add_entry', {
+            fetch('/add_entry/', {
                 method: 'POST',
                 body: formData
             })
