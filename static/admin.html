@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Entry</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input, select, textarea { margin-bottom: 10px; padding: 5px; }
+        button { margin-top: 10px; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Add New Entry</h1>
+    <form action="/add_entry" method="POST">
+        <label for="language">Language:</label>
+        <select name="language" id="language" required>
+            <option value="portuguese">Portuguese</option>
+            <option value="english">English</option>
+        </select>
+
+        <label for="input">Input:</label>
+        <textarea name="input" id="input" required></textarea>
+
+        <label for="ai">AI:</label>
+        <select name="ai" id="ai" required>
+            <option value="0">ChatGPT-4-Turbo</option>
+            <option value="1">Claude-3.5-Sonnet</option>
+            <option value="2">Llama-3.1-8B</option>
+            <option value="3">Llama-3.1-70B</option>
+            <option value="4">Llama-3.1-405B</option>
+            <option value="5">Llama-3-70B</option>
+            <option value="6">Llama-3-8B</option>
+        </select>
+
+        <label for="output">Output:</label>
+        <textarea name="output" id="output" required></textarea>
+
+        <button type="submit">Add Entry</button>
+    </form>
+</body>
+</html>
