@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os, random, time
-
+from itertools import combinations
 
 app = Flask(__name__, template_folder="./static", static_folder="./static")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///database.db')
@@ -23,7 +23,13 @@ AIs = {
     3: "Llama-3.1-70B",
     4: "Llama-3.1-405B",
     5: "Llama-3-70B",
-    6: "Llama-3-8B"
+    6: "Llama-3-8B",
+    7: "ChatGPT-4o",
+    8: "ChatGPT-4",
+    9: "Claude-3-Sonnet",
+    10: "Claude-3-Opus",
+    11: "Claude-3-Haiku",
+    12: "ChatGPT-3.5-Turbo" # specifically, the "raw" version (if you use poe.com to create the input)
     # TODO add more here and update the HTML lists also
 }
 
@@ -51,6 +57,15 @@ class AI(db.Model):
     quantum_physics_votes = db.Column(db.Integer, default=0)
     extreme_votes = db.Column(db.Integer, default=0)
 
+class Pairs(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ai1_id = db.Column(db.Integer, db.ForeignKey('ai.id'), nullable=False)
+    ai2_id = db.Column(db.Integer, db.ForeignKey('ai.id'), nullable=False)
+    ai1_votes = db.Column(db.Integer, default=0)
+    ai2_votes = db.Column(db.Integer, default=0)
+
+    __table_args__ = (db.UniqueConstraint('ai1_id', 'ai2_id'),)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -61,49 +76,81 @@ def select_output(topic):
         return "Invalid topic", 400
 
     if topic == "all":
-        # Select a random topic, excluding "all"
         random_topic = random.choice([t for t in SUPPORTED_TOPICS if t != "all"])
     else:
         random_topic = topic
 
-    random_output_1 = Output.query.filter_by(topic=random_topic).order_by(db.func.random()).first()
-    if not random_output_1:
-        return "No outputs found for the specified topic", 404
-    
-    random_output_2 = Output.query.filter_by(topic=random_topic, the_input=random_output_1.the_input).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
-    
-    if not random_output_2:
+    # Seleciona dois outputs diferentes para o mesmo tópico e input
+    outputs = Output.query.filter_by(topic=random_topic).order_by(db.func.random()).limit(2).all()
+
+    if len(outputs) < 2:
         return "Not enough outputs for comparison", 404
 
-    return render_template('compare.html', out1=random_output_1, out2=random_output_2)
+    random_output_1, random_output_2 = outputs
 
-@app.route("/select/<topic_and_id>")
+    # Garante que os outputs são de IAs diferentes
+    attempts = 0
+    while random_output_1.ai_id == random_output_2.ai_id and attempts < 10:
+        random_output_2 = Output.query.filter_by(topic=random_topic).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
+        attempts += 1
+
+    if random_output_1.ai_id == random_output_2.ai_id:
+        return "Unable to find outputs from different AIs", 404
+
+    # Obter os nomes das IAs
+    ai1_name = AIs.get(random_output_1.ai_id, f"Unknown AI (ID: {random_output_1.ai_id})")
+    ai2_name = AIs.get(random_output_2.ai_id, f"Unknown AI (ID: {random_output_2.ai_id})")
+
+    print(f"AI 1: {ai1_name} (ID: {random_output_1.ai_id})")
+    print(f"AI 2: {ai2_name} (ID: {random_output_2.ai_id})")
+
+    return render_template('compare.html', 
+                           out1=random_output_1, 
+                           out2=random_output_2, 
+                           ai1_name=ai1_name, 
+                           ai2_name=ai2_name, 
+                           ai1_id=random_output_1.ai_id, 
+                           ai2_id=random_output_2.ai_id,
+                           topic=random_topic)
+
+@app.route("/select/")
 @limiter.limit("1 per 2 seconds")
-def select_preferred(topic_and_id):
-    try:
-        topic, output_id = topic_and_id.split("_")
-        output_id = int(output_id)
-    except ValueError:
-        return "Invalid input format", 400
+def select_preferred():
+    ai1_id = request.args.get('ai1', type=int)
+    ai2_id = request.args.get('ai2', type=int)
+    selected_ai_id = request.args.get('selected', type=int)
+    topic = request.args.get('topic')
 
     if topic not in SUPPORTED_TOPICS:
         return "Invalid topic", 400
 
-    output = Output.query.get(output_id)
-    if not output:
-        return "Output not found", 404
+    if not all([ai1_id, ai2_id, selected_ai_id]) or selected_ai_id not in [ai1_id, ai2_id]:
+        return "Invalid input", 400
 
-    ai = AI.query.get(output.ai_id)
+    pair = Pairs.query.filter(
+        ((Pairs.ai1_id == ai1_id) & (Pairs.ai2_id == ai2_id)) |
+        ((Pairs.ai1_id == ai2_id) & (Pairs.ai2_id == ai1_id))
+    ).first()
+
+    if not pair:
+        return "Pair not found", 404
+
+    if selected_ai_id == pair.ai1_id:
+        pair.ai1_votes += 1
+    else:
+        pair.ai2_votes += 1
+
+    ai = AI.query.get(selected_ai_id)
     if not ai:
         return "AI not found", 404
 
     # Update votes for the specific topic
-    if hasattr(ai, f"{output.topic}_votes"):
-        setattr(ai, f"{output.topic}_votes", getattr(ai, f"{output.topic}_votes") + 1)
+    if hasattr(ai, f"{topic}_votes"):
+        setattr(ai, f"{topic}_votes", getattr(ai, f"{topic}_votes") + 1)
 
     db.session.commit()
 
-    return AIs[ai.id], 200
+    return AIs[selected_ai_id], 200
 
 def format_number(num):
     if num < 1000:
@@ -158,16 +205,41 @@ def statistics():
 
     return render_template('statistics.html', stats=formatted_stats)
 
+@app.route("/statistics/compare/")
+def statistics_compare():
+    all_pairs = db.session.query(Pairs).all()
+    pairs_list = []
+
+    for pair in all_pairs:
+        ai1 = AI.query.get(pair.ai1_id)
+        ai2 = AI.query.get(pair.ai2_id)
+        
+        pair_info = [
+            pair.id,
+            ai1.name,
+            ai2.name,
+            pair.ai1_votes,
+            pair.ai2_votes,
+            pair.ai1_votes + pair.ai2_votes
+        ]
+        
+        pairs_list.append(pair_info)
+    return render_template("statistics_compare.html", all_pairs=all_pairs)
+
 def init_db():
     db.create_all()
     if not Output.query.first():
-        #db.session.add(Output(id=1, text='teste1', the_input='input1', ai_id=1, language='portuguese'))
-        #db.session.add(Output(id=2, text='teste2', the_input='input1', ai_id=2, language='portuguese'))
-        #db.session.commit()
         pass
     if not AI.query.first():
         for ai_id, ai_name in AIs.items():
             db.session.add(AI(id=ai_id, description="aa", name=ai_name))
+        db.session.commit()
+    
+    if not Pairs.query.first():
+        ai_ids = list(AIs.keys())
+        for ai1_id, ai2_id in combinations(ai_ids, 2):
+            new_pair = Pairs(ai1_id=ai1_id, ai2_id=ai2_id)
+            db.session.add(new_pair)
         db.session.commit()
 
 admin_mode=True
@@ -183,9 +255,12 @@ def add_entry():
     input_text = request.form['input']
     ai_id = int(request.form['ai'])
     output_text = request.form['output']
+    print(topic)
 
     if topic not in SUPPORTED_TOPICS:
         return "Invalid topic", 400
+    
+    # TODO FIXME Maybe we need to check if the AI ID is correct?
 
     new_entry = Output(text=output_text, the_input=input_text, ai_id=ai_id, topic=topic)
     db.session.add(new_entry)
