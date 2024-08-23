@@ -18,18 +18,27 @@ limiter = Limiter(
 
 AIs = {
     0: "ChatGPT-4-Turbo",
+    12: "ChatGPT-3.5-Turbo",      # specifically, the "raw" version (if you use poe.com to create the input)
+    7: "ChatGPT-4o",
+    8: "ChatGPT-4",
+
     1: "Claude-3.5-Sonnet",
+    9: "Claude-3-Sonnet",
+    10: "Claude-3-Opus",
+    11: "Claude-3-Haiku",
+
     2: "Llama-3.1-8B",
     3: "Llama-3.1-70B",
     4: "Llama-3.1-405B",
     5: "Llama-3-70B",
     6: "Llama-3-8B",
-    7: "ChatGPT-4o",
-    8: "ChatGPT-4",
-    9: "Claude-3-Sonnet",
-    10: "Claude-3-Opus",
-    11: "Claude-3-Haiku",
-    12: "ChatGPT-3.5-Turbo" # specifically, the "raw" version (if you use poe.com to create the input)
+
+    13: "Gemma-2-27B", # https://deepinfra.com/google/gemma-2-27b-it
+    14: "Gemma-2-9B", # https://deepinfra.com/google/gemma-2-9b-it
+
+    15: "Mixtral-8x22B-Instruct-v0.1",
+    16: "Mixtral-8x7B-Instruct-v0.1",
+    17: ""
     # TODO add more here and update the HTML lists also
 }
 
@@ -66,12 +75,18 @@ class Pairs(db.Model):
 
     __table_args__ = (db.UniqueConstraint('ai1_id', 'ai2_id'),)
 
+from random import choices
+display_counts = {ai_id: 0 for ai_id in AIs.keys()}
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route("/<topic>/")
 def select_output(topic):
+    global display_counts
+
     if topic not in SUPPORTED_TOPICS:
         return "Invalid topic", 400
 
@@ -80,22 +95,47 @@ def select_output(topic):
     else:
         random_topic = topic
 
-    # Seleciona dois outputs diferentes para o mesmo tópico e input
-    outputs = Output.query.filter_by(topic=random_topic).order_by(db.func.random()).limit(2).all()
+    # Obter todas as IAs que têm outputs para o tópico selecionado
+    available_ai_ids = db.session.query(Output.ai_id).filter_by(topic=random_topic).distinct().all()
+    available_ai_ids = [ai_id for (ai_id,) in available_ai_ids]
 
-    if len(outputs) < 2:
-        return "Not enough outputs for comparison", 404
+    if len(available_ai_ids) < 2:
+        return "Not enough AIs with outputs for comparison", 404
 
-    random_output_1, random_output_2 = outputs
+    # Calcular pesos inversos à contagem de exibições apenas para as IAs disponíveis
+    weights = [1 / (display_counts[ai_id] + 1) for ai_id in available_ai_ids]
 
-    # Garante que os outputs são de IAs diferentes
+    # Selecionar duas IAs diferentes usando escolha ponderada
+    selected_ai_ids = choices(available_ai_ids, weights=weights, k=2)
+    while selected_ai_ids[0] == selected_ai_ids[1]:
+        selected_ai_ids[1] = choices(available_ai_ids, weights=weights, k=1)[0]
+
+    # Seleciona um output para a primeira IA selecionada
+    random_output_1 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[0]).order_by(db.func.random()).first()
+
+    # Tenta encontrar um output da segunda IA com o mesmo input
     attempts = 0
-    while random_output_1.ai_id == random_output_2.ai_id and attempts < 10:
-        random_output_2 = Output.query.filter_by(topic=random_topic).filter(Output.id != random_output_1.id).order_by(db.func.random()).first()
+    random_output_2 = None
+    while attempts < 10:
+        random_output_2 = Output.query.filter_by(topic=random_topic, the_input=random_output_1.the_input, ai_id=selected_ai_ids[1]).first()
+        
+        if random_output_2:
+            break
+        
         attempts += 1
+        # Se não encontrar, seleciona outro output da primeira IA e tenta novamente
+        random_output_1 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[0]).order_by(db.func.random()).first()
 
-    if random_output_1.ai_id == random_output_2.ai_id:
-        return "Unable to find outputs from different AIs", 404
+    if not random_output_2:
+        # Se não encontrar um par, seleciona qualquer output da segunda IA
+        random_output_2 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[1]).order_by(db.func.random()).first()
+
+    if not random_output_1 or not random_output_2:
+        return "Unable to find outputs for comparison", 404
+
+    # Atualiza as contagens de exibição
+    display_counts[random_output_1.ai_id] += 1
+    display_counts[random_output_2.ai_id] += 1
 
     # Obter os nomes das IAs
     ai1_name = AIs.get(random_output_1.ai_id, f"Unknown AI (ID: {random_output_1.ai_id})")
@@ -103,6 +143,8 @@ def select_output(topic):
 
     print(f"AI 1: {ai1_name} (ID: {random_output_1.ai_id})")
     print(f"AI 2: {ai2_name} (ID: {random_output_2.ai_id})")
+    random_output_1.text = random_output_1.text.replace("<", "˂").replace(">", "˃")
+    random_output_2.text = random_output_2.text.replace("<", "˂").replace(">", "˃")
 
     return render_template('compare.html', 
                            out1=random_output_1, 
@@ -296,4 +338,4 @@ def add_suggest():
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', host="0.0.0.0", port=80)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
