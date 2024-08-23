@@ -45,7 +45,7 @@ AIs = {
 SUPPORTED_TOPICS = ["all", "coding", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
 
 class Output(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     text = db.Column(db.Text, nullable=False)
     the_input = db.Column(db.String(50000), nullable=False)
     ai_id = db.Column(db.Integer, nullable=False)
@@ -284,7 +284,7 @@ def init_db():
             db.session.add(new_pair)
         db.session.commit()
 
-admin_mode=True
+admin_mode=False
 
 @app.route('/admin/')
 def add_entry_form():
@@ -293,22 +293,23 @@ def add_entry_form():
 
 @app.route('/add_entry/', methods=['POST'])
 def add_entry():
-    topic = request.form['topic']
-    input_text = request.form['input']
-    ai_id = int(request.form['ai'])
-    output_text = request.form['output']
-    print(topic)
+    if admin_mode:
+        topic = request.form['topic']
+        input_text = request.form['input']
+        ai_id = int(request.form['ai'])
+        output_text = request.form['output']
+        print(topic)
 
-    if topic not in SUPPORTED_TOPICS:
-        return "Invalid topic", 400
-    
-    # TODO FIXME Maybe we need to check if the AI ID is correct?
+        if topic not in SUPPORTED_TOPICS:
+            return "Invalid topic", 400
+        
+        # TODO FIXME Maybe we need to check if the AI ID is correct?
 
-    new_entry = Output(text=output_text, the_input=input_text, ai_id=ai_id, topic=topic)
-    db.session.add(new_entry)
-    db.session.commit()
+        new_entry = Output(text=output_text, the_input=input_text, ai_id=ai_id, topic=topic)
+        db.session.add(new_entry)
+        db.session.commit()
 
-    return redirect("/admin/")
+        return redirect("/admin/")
 
 @app.route("/suggest-specific-input/")
 def suggest_specific_input():
