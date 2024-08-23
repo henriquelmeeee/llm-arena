@@ -248,7 +248,7 @@ window.addEventListener('load', function() {
             const cardIndex = Array.from(card.parentNode.children).indexOf(card) + 1;
             const otherCardIndex = cardIndex === 1 ? 2 : 1;
             
-            const url = `/select?ai1={{ ai1_id }}&ai2={{ ai2_id }}&selected=${outputId}&topic=${topic}`;
+            const url = `https://${window.location.hostname}/select?ai1={{ ai1_id }}&ai2={{ ai2_id }}&selected=${outputId}&topic=${topic}`;
 
             fetch(url)
                 .then(response => {
