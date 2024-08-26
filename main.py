@@ -1,4 +1,7 @@
+# TODO tem q arrumar erro q o topico "all" n vai no /all
+
 from flask import Flask, render_template, request, g, redirect, flash
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -10,10 +13,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///dat
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 app.secret_key = "SDAKldjsafhlkhRIOAUYRH9aiuhrfsad(y)"
+CORS(app)
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200000000 per day", "5000000000000 per hour"]
 )
 
 AIs = {
@@ -339,4 +344,4 @@ def add_suggest():
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
