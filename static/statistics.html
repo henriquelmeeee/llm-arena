@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Statistics | LLM Arena</title>
+    <title>AI statistics | LLM Arena</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             background-color: #f0f0f0;
@@ -28,57 +29,55 @@
         .table-hover tbody tr:hover {
             background-color: #f8f9fa;
         }
+        header {
+          background-color: #f8f9fa;
+          padding: 1rem 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          justify-content: center;
+        }
+        nav ul li {
+          margin: 0 1rem;
+        }
+        nav ul li a {
+          text-decoration: none;
+          color: #333;
+          font-weight: 500;
+          transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+          color: #007bff;
+        }
+        #pointsChart {
+            margin-top: 2rem;
+        }
     </style>
 </head>
-<header>
-    <nav>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/statistics/">Leaderboard</a></li>
-        <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
-      </ul>
-    </nav>
-</header>
-<style>
-    header {
-      background-color: #f8f9fa;
-      padding: 1rem 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    nav ul {
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-    }
-    
-    nav ul li {
-      margin: 0 1rem;
-    }
-    
-    nav ul li a {
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-    
-    nav ul li a:hover {
-      color: #007bff;
-    }
-</style>
 <body>
+    <header>
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/statistics/">Leaderboard</a></li>
+            <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
+          </ul>
+        </nav>
+    </header>
+
     <div class="container mt-5">
-        <h1 class="text-center mb-4">AI Performance Statistics</h1>
+        <h1 class="text-center mb-4">Models Performance</h1>
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th scope="col">Rank</th>
+                        <th scope="col">Position</th>
                         <th scope="col">Model</th>
-                        <th scope="col">Total votes</th>
+                        <th scope="col">Total Votes</th>
                         <th scope="col">Details</th>
                     </tr>
                 </thead>
@@ -90,7 +89,7 @@
                         <td>{{ ai.total_votes }}</td>
                         <td>
                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#detailsModal{{ ai.id }}">
-                                View Details
+                                Show Details
                             </button>
                         </td>
                     </tr>
@@ -98,6 +97,8 @@
                 </tbody>
             </table>
         </div>
+
+        <canvas id="pointsChart"></canvas>
     </div>
 
     {% for ai in stats %}
@@ -105,7 +106,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="detailsModalLabel{{ ai.id }}">{{ ai.name }} Details</h5>
+                    <h5 class="modal-title" id="detailsModalLabel{{ ai.id }}">Details of {{ ai.name }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -117,8 +118,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>Coding</td><td>{{ ai.coding_votes }}</td></tr>
-                            <tr><td>Resuming</td><td>{{ ai.resuming_votes }}</td></tr>
+                            <tr><td>Programmin</td><td>{{ ai.coding_votes }}</td></tr>
+                            <tr><td>Resumes</td><td>{{ ai.resuming_votes }}</td></tr>
                             <tr><td>Creative Writing</td><td>{{ ai.creative_writing_votes }}</td></tr>
                             <tr><td>Data Analysis</td><td>{{ ai.data_analysis_votes }}</td></tr>
                             <tr><td>Science</td><td>{{ ai.science_votes }}</td></tr>
@@ -136,5 +137,59 @@
     {% endfor %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('pointsChart').getContext('2d');
+            var data = {
+                datasets: [{
+                    label: 'AI comparison by graph',
+                    data: [
+                        {% for ai in stats %}
+                        {
+                            x: Math.log({{ ai.total_votes }}) * 10,
+                            y: {{ ai.total_votes }},
+                            r: 10,
+                            label: '{{ ai.name }}'
+                        },
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                }]
+            };
+            var options = {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Votes (logarithm)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Votes'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw.label + ': ' + context.raw.y + ' votes';
+                            }
+                        }
+                    }
+                }
+            };
+            new Chart(ctx, {
+                type: 'bubble',
+                data: data,
+                options: options
+            });
+        });
+    </script>
 </body>
 </html>
