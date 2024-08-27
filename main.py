@@ -1,5 +1,6 @@
 # TODO tem q arrumar erro q o topico "all" n vai no /all
-
+# IDEIA no topico de coding, dar codigos que não tem problema e depois inventar um problema
+# pra testar alucinação da IA
 from flask import Flask, render_template, request, g, redirect, flash
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -43,7 +44,7 @@ AIs = {
 
     15: "Mixtral-8x22B-Instruct-v0.1",
     16: "Mixtral-8x7B-Instruct-v0.1",
-    17: ""
+    17: "Openchat-3.6-8b"
     # TODO add more here and update the HTML lists also
 }
 
@@ -103,7 +104,6 @@ def select_output(topic):
     # Obter todas as IAs que têm outputs para o tópico selecionado
     available_ai_ids = db.session.query(Output.ai_id).filter_by(topic=random_topic).distinct().all()
     available_ai_ids = [ai_id for (ai_id,) in available_ai_ids]
-    print(available_ai_ids)
     if len(available_ai_ids) < 2:
         return "Not enough AIs with outputs for comparison", 404
 
@@ -303,7 +303,6 @@ def add_entry():
         input_text = request.form['input']
         ai_id = int(request.form['ai'])
         output_text = request.form['output']
-        print(topic)
 
         if topic not in SUPPORTED_TOPICS:
             return "Invalid topic", 400
