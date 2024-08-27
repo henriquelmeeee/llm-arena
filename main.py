@@ -49,7 +49,7 @@ AIs = {
     # TODO add more here and update the HTML lists also
 }
 
-SUPPORTED_TOPICS = ["all", "coding", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
+SUPPORTED_TOPICS = ["all", "coding", "explaining", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
 
 class Output(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -103,63 +103,72 @@ def select_output(topic):
     else:
         random_topic = topic
 
-    # Obter todas as IAs que têm outputs para o tópico selecionado
+    # 1. Escolher todas as IAs que têm output para o tópico
     available_ai_ids = db.session.query(Output.ai_id).filter_by(topic=random_topic).distinct().all()
     available_ai_ids = [ai_id for (ai_id,) in available_ai_ids]
+
     if len(available_ai_ids) < 2:
         return "Not enough AIs with outputs for comparison", 404
 
-    # Calcular pesos inversos à contagem de exibições apenas para as IAs disponíveis
+    # Calcular pesos inversos à contagem de exibições
     weights = [1 / (display_counts[ai_id] + 1) for ai_id in available_ai_ids]
 
-    # Selecionar duas IAs diferentes usando escolha ponderada
-    selected_ai_ids = choices(available_ai_ids, weights=weights, k=2)
-    while selected_ai_ids[0] == selected_ai_ids[1]:
-        selected_ai_ids[1] = choices(available_ai_ids, weights=weights, k=1)[0]
+    try:
+        # 2. Escolher o primeiro output aleatório
+        first_ai_id = choices(available_ai_ids, weights=weights, k=1)[0]
+        first_output = Output.query.filter_by(topic=random_topic, ai_id=first_ai_id).order_by(db.func.random()).first()
 
-    # Seleciona um output para a primeira IA selecionada
-    random_output_1 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[0]).order_by(db.func.random()).first()
+        if not first_output:
+            raise Exception("No output found for the first AI")
 
-    # Tenta encontrar um output da segunda IA com o mesmo input
-    attempts = 0
-    random_output_2 = None
-    while attempts < 10:
-        random_output_2 = Output.query.filter_by(topic=random_topic, the_input=random_output_1.the_input, ai_id=selected_ai_ids[1]).first()
+        # 3. Tentar encontrar um segundo output com o mesmo the_input, mas de uma IA diferente
+        second_output = Output.query.filter(
+            Output.topic == random_topic,
+            Output.the_input == first_output.the_input,
+            Output.ai_id != first_ai_id,
+            Output.ai_id.in_(available_ai_ids)
+        ).order_by(db.func.random()).first()
+
+        if not second_output:
+            raise Exception("No matching output found for the second AI")
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        # Se não der certo, pegar um output aleatório e outro de qualquer IA
+        first_output = Output.query.filter_by(topic=random_topic).order_by(db.func.random()).first()
         
-        if random_output_2:
-            break
-        
-        attempts += 1
-        # Se não encontrar, seleciona outro output da primeira IA e tenta novamente
-        random_output_1 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[0]).order_by(db.func.random()).first()
+        if not first_output:
+            return "No outputs available for this topic", 404
 
-    if not random_output_2:
-        # Se não encontrar um par, seleciona qualquer output da segunda IA
-        random_output_2 = Output.query.filter_by(topic=random_topic, ai_id=selected_ai_ids[1]).order_by(db.func.random()).first()
+        second_output = Output.query.filter(
+            Output.topic == random_topic,
+            Output.the_input == first_output.the_input,
+            Output.ai_id != first_output.ai_id
+        ).order_by(db.func.random()).first()
 
-    if not random_output_1 or not random_output_2:
-        return "Unable to find outputs for comparison", 404
+        if not second_output:
+            return "Unable to find a pair of outputs for comparison", 404
 
-    # Atualiza as contagens de exibição
-    display_counts[random_output_1.ai_id] += 1
-    display_counts[random_output_2.ai_id] += 1
+    # Atualizar as contagens de exibição
+    display_counts[first_output.ai_id] += 1
+    display_counts[second_output.ai_id] += 1
 
     # Obter os nomes das IAs
-    ai1_name = AIs.get(random_output_1.ai_id, f"Unknown AI (ID: {random_output_1.ai_id})")
-    ai2_name = AIs.get(random_output_2.ai_id, f"Unknown AI (ID: {random_output_2.ai_id})")
+    ai1_name = AIs.get(first_output.ai_id, f"Unknown AI (ID: {first_output.ai_id})")
+    ai2_name = AIs.get(second_output.ai_id, f"Unknown AI (ID: {second_output.ai_id})")
 
-    print(f"AI 1: {ai1_name} (ID: {random_output_1.ai_id})")
-    print(f"AI 2: {ai2_name} (ID: {random_output_2.ai_id})")
-    random_output_1.text = random_output_1.text.replace("<", "˂").replace(">", "˃")
-    random_output_2.text = random_output_2.text.replace("<", "˂").replace(">", "˃")
+    print(f"AI 1: {ai1_name} (ID: {first_output.ai_id})")
+    print(f"AI 2: {ai2_name} (ID: {second_output.ai_id})")
+    first_output.text = first_output.text.replace("<", "˂").replace(">", "˃")
+    second_output.text = second_output.text.replace("<", "˂").replace(">", "˃")
 
-    return render_template('compare.html', 
-                           out1=random_output_1, 
-                           out2=random_output_2, 
-                           ai1_name=ai1_name, 
-                           ai2_name=ai2_name, 
-                           ai1_id=random_output_1.ai_id, 
-                           ai2_id=random_output_2.ai_id,
+    return render_template('compare.html',
+                           out1=first_output,
+                           out2=second_output,
+                           ai1_name=ai1_name,
+                           ai2_name=ai2_name,
+                           ai1_id=first_output.ai_id,
+                           ai2_id=second_output.ai_id,
                            topic=random_topic)
 
 @app.route("/select/")
@@ -348,10 +357,10 @@ def add_suggest():
 
 if __name__ == '__main__':
     with app.app_context():
-        from sqlalchemy import Column, Integer, text
+        #from sqlalchemy import Column, Integer, text
     
         # Adiciona a nova coluna 'explaining_votes' com valor default 0
-        with db.engine.connect() as conn:
-            conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
+        #with db.engine.connect() as conn:
+            #conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', host="0.0.0.0", port=80)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
