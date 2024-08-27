@@ -27,6 +27,7 @@ AIs = {
     12: "ChatGPT-3.5-Turbo",      # specifically, the "raw" version (if you use poe.com to create the input)
     7: "ChatGPT-4o",
     8: "ChatGPT-4",
+    25: "ChatGPT-4o-mini",
 
     1: "Claude-3.5-Sonnet",
     9: "Claude-3-Sonnet",
@@ -71,6 +72,7 @@ class AI(db.Model):
     mathematics_votes = db.Column(db.Integer, default=0)
     quantum_physics_votes = db.Column(db.Integer, default=0)
     extreme_votes = db.Column(db.Integer, default=0)
+    explaining_votes = db.Column(db.Integer, default=0)
 
 class Pairs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -194,6 +196,8 @@ def select_preferred():
     # Update votes for the specific topic
     if hasattr(ai, f"{topic}_votes"):
         setattr(ai, f"{topic}_votes", getattr(ai, f"{topic}_votes") + 1)
+    else:
+        return "AI has no attr \{topic\}_votes", 500
 
     db.session.commit()
 
@@ -218,6 +222,7 @@ def statistics():
         AI.name,
         AI.coding_votes,
         AI.resuming_votes,
+        AI.explaining_votes,
         AI.creative_writing_votes,
         AI.data_analysis_votes,
         AI.science_votes,
@@ -228,7 +233,7 @@ def statistics():
         AI.extreme_votes,
         (AI.coding_votes + AI.resuming_votes + AI.creative_writing_votes + 
          AI.data_analysis_votes + AI.science_votes + AI.history_votes + 
-         AI.philosophy_votes + AI.mathematics_votes + AI.quantum_physics_votes + 
+         AI.philosophy_votes + AI.explaining_votes + AI.mathematics_votes + AI.quantum_physics_votes + 
          AI.extreme_votes).label('total_votes')
     ).order_by(db.desc('total_votes')).all()
 
@@ -239,6 +244,7 @@ def statistics():
             'name': ai.name,
             'coding_votes': format_number(ai.coding_votes),
             'resuming_votes': format_number(ai.resuming_votes),
+            'explaining_votes': format_number(ai.explaining_votes),
             'creative_writing_votes': format_number(ai.creative_writing_votes),
             'data_analysis_votes': format_number(ai.data_analysis_votes),
             'science_votes': format_number(ai.science_votes),
@@ -342,5 +348,10 @@ def add_suggest():
 
 if __name__ == '__main__':
     with app.app_context():
+        from sqlalchemy import Column, Integer, text
+    
+        # Adiciona a nova coluna 'explaining_votes' com valor default 0
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', host="0.0.0.0", port=80)
