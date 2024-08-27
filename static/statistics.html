@@ -6,6 +6,7 @@
     <title>AI statistics | LLM Arena</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         body {
             background-color: #f0f0f0;
@@ -118,7 +119,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>Programmin</td><td>{{ ai.coding_votes }}</td></tr>
+                            <tr><td>Programming</td><td>{{ ai.coding_votes }}</td></tr>
                             <tr><td>Resumes</td><td>{{ ai.resuming_votes }}</td></tr>
                             <tr><td>Creative Writing</td><td>{{ ai.creative_writing_votes }}</td></tr>
                             <tr><td>Data Analysis</td><td>{{ ai.data_analysis_votes }}</td></tr>
@@ -181,14 +182,48 @@
                                 return context.raw.label + ': ' + context.raw.y + ' votes';
                             }
                         }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: function(value, context) {
+                            return context.dataset.data[context.dataIndex].label;
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        color: 'rgba(0, 0, 0, 0.7)',
+                        offset: 5,
+                        display: function(context) {
+                            var dataset = context.dataset;
+                            var count = dataset.data.length;
+                            var value = dataset.data[context.dataIndex];
+                            return count <= 1 || isIsolatedPoint(value, dataset.data);
+                        }
                     }
                 }
             };
+            Chart.register(ChartDataLabels);
             new Chart(ctx, {
                 type: 'bubble',
                 data: data,
                 options: options
             });
+    
+            function isIsolatedPoint(point, allPoints) {
+                var threshold = 5;
+                for (var i = 0; i < allPoints.length; i++) {
+                    var otherPoint = allPoints[i];
+                    if (point !== otherPoint) {
+                        var distance = Math.sqrt(Math.pow(point.x - otherPoint.x, 2) + Math.pow(point.y - otherPoint.y, 2));
+                        if (distance < threshold) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
         });
     </script>
 </body>
