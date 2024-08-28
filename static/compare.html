@@ -4,29 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>Choose Output | LLM Arena</title>
+    <title>Rate Outputs | LLM Arena</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script>
-            window.MathJax = {
-    tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']]
-    },
-    options: {
-        processHtmlClass: 'mathJax'
-    }
-};
-    </script>
     <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            max-width: 90%;
-        }
+        body { background-color: #f0f0f0; font-family: Arial, sans-serif; }
+        .container { max-width: 90%; }
         .output-card {
             height: 100%;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -46,12 +30,8 @@
             white-space: pre-wrap;
             line-height: 1.2;
         }
-        .output-text p {
-            margin-bottom: 1em;
-        }
-        .output-text::-webkit-scrollbar {
-            width: 8px;
-        }
+        .output-text p { margin-bottom: 1em; }
+        .output-text::-webkit-scrollbar { width: 8px; }
         .output-text::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 10px;
@@ -60,9 +40,7 @@
             background: #888;
             border-radius: 10px;
         }
-        .output-text::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
+        .output-text::-webkit-scrollbar-thumb:hover { background: #555; }
         .btn-primary {
             background-color: #007bff;
             border: none;
@@ -79,9 +57,7 @@
             color: #007bff;
             text-decoration: none;
         }
-        .center-link:hover {
-            text-decoration: underline;
-        }
+        .center-link:hover { text-decoration: underline; }
         .selected-output {
             border: 3px solid gold;
             box-shadow: 0 0 10px gold;
@@ -91,28 +67,16 @@
             font-weight: bold;
             margin-top: 10px;
         }
-        h1.text-center {
-            margin-top: -2rem;
-            margin-bottom: 0.5rem;
-        }
-        h3.text-center {
-            margin-top: -1.2rem;
-            margin-bottom: 0.25rem;
-        }
-        a {
-            margin-top: -0.5rem !important;
-        }
-        .row {
-            margin-top: 0.5rem;
-        }
+        h1.text-center { margin-top: -2rem; margin-bottom: 0.5rem; }
+        h3.text-center { margin-top: -1.2rem; margin-bottom: 0.25rem; }
+        a { margin-top: -0.5rem !important; }
+        .row { margin-top: 0.5rem; }
         .input-text {
             max-height: 100px;
             overflow: hidden;
             position: relative;
         }
-        .input-text.expanded {
-            max-height: none;
-        }
+        .input-text.expanded { max-height: none; }
         .read-more {
             position: absolute;
             bottom: 0;
@@ -126,50 +90,58 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        .rating-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .rating-btn {
+            flex: 1;
+            margin: 0 5px;
+            padding: 5px;
+            font-size: 0.8rem;
+        }
+        .rating-btn.active {
+            border: 2px solid gold;
+            box-shadow: 0 0 5px gold;
+        }
+        .btn-very-bad { background-color: #000000; color: white; }
+        .btn-bad { background-color: #dc3545; color: white; }
+        header {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li { margin: 0 1rem; }
+        nav ul li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover { color: #007bff; }
     </style>
 </head>
-<header>
-    <nav>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/statistics/">Leaderboard</a></li>
-        <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
-      </ul>
-    </nav>
-</header>
-<style>
-    header {
-      background-color: #f8f9fa;
-      padding: 1rem 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    nav ul {
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-    }
-    
-    nav ul li {
-      margin: 0 1rem;
-    }
-    
-    nav ul li a {
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-    
-    nav ul li a:hover {
-      color: #007bff;
-    }
-</style>
 <body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/statistics/">Leaderboard</a></li>
+                <li><a href="https://github.com/henriquelmeeee/llm-arena/tree/main" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Choose Your Preferred Output</h1>
+        <h1 class="text-center mb-4">Rate the Outputs</h1>
         <h3 class="text-center">Input:</h3>
         <p class="text-center input-text" id="input-text">❝{{out1.the_input}}❞</p>
         <div class="row">
@@ -178,7 +150,13 @@
                     <div class="card-body">
                         <h5 class="card-title">Output 1</h5>
                         <div class="output-text mb-3" id="output1"></div>
-                        <button class="btn btn-primary select-btn w-100" data-output-id="{{ ai1_id }}">I prefer this</button>
+                        <div class="rating-buttons">
+                            <button class="btn btn-very-bad rating-btn" data-rating="0">Very Bad</button>
+                            <button class="btn btn-bad rating-btn" data-rating="1">Bad</button>
+                            <button class="btn btn-info rating-btn" data-rating="2">Good</button>
+                            <button class="btn btn-success rating-btn" data-rating="3">Great</button>
+                            <button class="btn btn-primary rating-btn" data-rating="4">Amazing</button>
+                        </div>
                     </div>
                 </div>
                 <div class="ai-name" id="ai1-name" style="display: none;">{{ ai1_name }}</div>
@@ -188,17 +166,23 @@
                     <div class="card-body">
                         <h5 class="card-title">Output 2</h5>
                         <div class="output-text mb-3" id="output2"></div>
-                        <button class="btn btn-primary select-btn w-100" data-output-id="{{ ai2_id }}">I prefer this</button>
+                        <div class="rating-buttons">
+                            <button class="btn btn-very-bad rating-btn" data-rating="0">Very Bad</button>
+                            <button class="btn btn-bad rating-btn" data-rating="1">Bad</button>
+                            <button class="btn btn-info rating-btn" data-rating="2">Good</button>
+                            <button class="btn btn-success rating-btn" data-rating="3">Great</button>
+                            <button class="btn btn-primary rating-btn" data-rating="4">Amazing</button>
+                        </div>
                     </div>
                 </div>
                 <div class="ai-name" id="ai2-name" style="display: none;">{{ ai2_name }}</div>
             </div>
+            <button id="submit-ratings" class="btn btn-primary w-100 mt-3" style="display: none;">Submit Ratings</button>
+            <p class="text-center">Please rate both outputs before submitting.</p>
             <a class="center-link" href="." id="choose-another">Choose another sample</a>
-            <p class="text-center">If you don't know, just skip.</p>
         </div>
     </div>
 
-    <!-- Modal para exibir o input completo -->
     <div class="modal fade" id="inputModal" tabindex="-1" aria-labelledby="inputModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -213,70 +197,125 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-window.addEventListener('load', function() {
-    const selectButtons = document.querySelectorAll('.select-btn');
-    const topic = window.location.pathname.split('/')[1];
+        window.addEventListener('load', function() {
+            const ratingButtons = document.querySelectorAll('.rating-btn');
+            const submitButton = document.getElementById('submit-ratings');
+            const topic = window.location.pathname.split('/')[1];
+            let ai1Vote = null;
+            let ai2Vote = null;
+            function renderOutput(elementId, content) {
+                const element = document.getElementById(elementId);
+                
+                function escapeHtml(unsafe) {
+                    return unsafe
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                }
 
-    function renderOutput(elementId, content) {
-        const element = document.getElementById(elementId);
-        element.textContent = content;
-        //MathJax.typesetPromise([element]);
-    }
-
-    renderOutput('output1', {{ out1.text|tojson|safe }});
-    renderOutput('output2', {{ out2.text|tojson|safe }});
-
-    const inputText = document.getElementById('input-text');
-    const inputContent = inputText.textContent;
-    if (inputContent.length > 300) {
-        const truncatedText = inputContent.slice(0, 300) + '...';
-        inputText.textContent = truncatedText;
-        const readMore = document.createElement('span');
-        readMore.textContent = 'Read more';
-        readMore.className = 'read-more';
-        readMore.onclick = function() {
-            const modal = new bootstrap.Modal(document.getElementById('inputModal'));
-            document.getElementById('modalInputText').textContent = inputContent;
-            modal.show();
-        };
-        inputText.appendChild(readMore);
-    }
-
-    selectButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const outputId = this.getAttribute('data-output-id');
-            const card = this.closest('.card');
-            const cardIndex = Array.from(card.parentNode.children).indexOf(card) + 1;
-            const otherCardIndex = cardIndex === 1 ? 2 : 1;
-            
-            const url = `https://${window.location.hostname}/select?ai1={{ ai1_id }}&ai2={{ ai2_id }}&selected=${outputId}&topic=${topic}`;
-
-            fetch(url)
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();
-                    }
-                    throw new Error('Network response was not ok.');
-                })
-                .then(data => {
-                    const selectedCard = this.closest('.output-card');
-                    selectedCard.classList.add('selected-output');
-
-                    selectButtons.forEach(btn => btn.disabled = true);
-
-                    document.getElementById('ai1-name').style.display = 'block';
-                    document.getElementById('ai2-name').style.display = 'block';
-
-                    document.getElementById('choose-another').style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    alert('There was an error processing your selection. Probably time out. Wait at least 3 seconds.');
+                // Processar blocos de código primeiro
+                content = content.replace(/```([\s\S]*?)```/g, function(match, code) {
+                    code = escapeHtml(code.trim());
+                    const firstLine = code.split('\n')[0];
+                    const lang = firstLine.match(/^[a-zA-Z]+$/) ? firstLine : '';
+                    const codeContent = lang ? code.substring(firstLine.length + 1) : code;
+                    return `<pre><code class="language-${lang}">${codeContent}</code></pre>`;
                 });
-        });
-    });
-});
-    </script>
 
+                // Processar código inline
+                content = content.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+                // Processar negrito
+                content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                // Processar LaTeX
+                content = content.replace(/\$\$(.*?)\$\$/g, '<span class="latex">$$$1$$</span>');
+
+                // Processar quebras de linha
+                content = content.replace(/\n/g, '<br>');
+
+                element.innerHTML = content;
+            }
+            renderOutput('output1', {{ out1.text|tojson|safe }});
+            renderOutput('output2', {{ out2.text|tojson|safe }});
+
+            const inputText = document.getElementById('input-text');
+            const inputContent = inputText.textContent;
+            if (inputContent.length > 300) {
+                const truncatedText = inputContent.slice(0, 300) + '...';
+                inputText.textContent = truncatedText;
+                const readMore = document.createElement('span');
+                readMore.textContent = 'Read more';
+                readMore.className = 'read-more';
+                readMore.onclick = function() {
+                    const modal = new bootstrap.Modal(document.getElementById('inputModal'));
+                    document.getElementById('modalInputText').textContent = inputContent;
+                    modal.show();
+                };
+                inputText.appendChild(readMore);
+            }
+
+            ratingButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const rating = this.getAttribute('data-rating');
+                    const card = this.closest('.card');
+                    const cardIndex = card.id === 'card1' ? 1 : 2;
+                    
+                    if (cardIndex === 1) {
+                        ai1Vote = rating;
+                    } else {
+                        ai2Vote = rating;
+                    }
+
+                    card.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Verifica se ambos os outputs foram avaliados e exibe o botão de submissão
+                    if (ai1Vote !== null && ai2Vote !== null) {
+                        submitButton.style.display = 'block';
+                    } else {
+                        submitButton.style.display = 'none';
+                    }
+                });
+            });
+
+            submitButton.addEventListener('click', function() {
+                if (ai1Vote === null || ai2Vote === null) {
+                    alert('Please rate both outputs before submitting.');
+                    return;
+                }
+
+                const url = `https://${window.location.hostname}/select?ai1={{ ai1_id }}&ai2={{ ai2_id }}&ai1_vote=${ai1Vote}&ai2_vote=${ai2Vote}&topic=${topic}`;
+                
+                fetch(url)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Network response was not ok.');
+                    })
+                    .then(data => {
+                        ratingButtons.forEach(btn => btn.disabled = true);
+                        submitButton.disabled = true;
+
+                        // Show AI names
+                        const ai1NameElement = document.getElementById('ai1-name');
+                        const ai2NameElement = document.getElementById('ai2-name');
+                        ai1NameElement.textContent = '{{ ai1_name }}';
+                        ai2NameElement.textContent = '{{ ai2_name }}';
+                        ai1NameElement.style.display = 'block';
+                        ai2NameElement.style.display = 'block';
+
+                        document.getElementById('choose-another').style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                        alert('There was an error processing your ratings. Probably time out. Wait at least 3 seconds.');
+                    });
+            });
+        });
+    </script>
 </body>
 </html>
