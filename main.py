@@ -176,14 +176,15 @@ def select_output(topic):
 def select_preferred():
     ai1_id = request.args.get('ai1', type=int)
     ai2_id = request.args.get('ai2', type=int)
-    selected_ai_id = request.args.get('selected', type=int)
+    ai1_rating = request.args.get('ai1_vote', type=int)
+    ai2_rating = request.args.get('ai2_vote', type=int)
     topic = request.args.get('topic')
 
     if topic not in SUPPORTED_TOPICS:
         return "Invalid topic", 400
 
-    if not all([ai1_id, ai2_id, selected_ai_id]) or selected_ai_id not in [ai1_id, ai2_id]:
-        return "Invalid input", 400
+    if not all(0 <= rating <= 4 for rating in (ai1_rating, ai2_rating)):
+        return "Invalid rating", 400
 
     pair = Pairs.query.filter(
         ((Pairs.ai1_id == ai1_id) & (Pairs.ai2_id == ai2_id)) |
@@ -193,24 +194,35 @@ def select_preferred():
     if not pair:
         return "Pair not found", 404
 
-    if selected_ai_id == pair.ai1_id:
-        pair.ai1_votes += 1
-    else:
-        pair.ai2_votes += 1
+    def calculate_score(rating):
+        score_map = {0: -2, 1: -1, 2: 1, 3: 2, 4: 3}
+        return score_map[rating]
 
-    ai = AI.query.get(selected_ai_id)
-    if not ai:
+    ai1_score = calculate_score(ai1_rating)
+    ai2_score = calculate_score(ai2_rating)
+
+    ai1 = AI.query.get(ai1_id)
+    ai2 = AI.query.get(ai2_id)
+
+    if not ai1 or not ai2:
         return "AI not found", 404
 
     # Update votes for the specific topic
-    if hasattr(ai, f"{topic}_votes"):
-        setattr(ai, f"{topic}_votes", getattr(ai, f"{topic}_votes") + 1)
-    else:
-        return "AI has no attr \{topic\}_votes", 500
+    for ai, score in [(ai1, ai1_score), (ai2, ai2_score)]:
+        vote_attr = f"{topic}_votes"
+        if hasattr(ai, vote_attr):
+            current_votes = getattr(ai, vote_attr)
+            setattr(ai, vote_attr, current_votes + score)
+        else:
+            return f"AI has no attr", 500
+
+    # Update pair votes
+    pair.ai1_votes += ai1_score
+    pair.ai2_votes += ai2_score
 
     db.session.commit()
 
-    return AIs[selected_ai_id], 200
+    return "Votes updated successfully", 200
 
 def format_number(num):
     if num < 1000:
@@ -363,4 +375,4 @@ if __name__ == '__main__':
         #with db.engine.connect() as conn:
             #conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', host="0.0.0.0", port=80)
