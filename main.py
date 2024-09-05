@@ -369,10 +369,13 @@ def add_suggest():
 
 if __name__ == '__main__':
     with app.app_context():
-        #from sqlalchemy import Column, Integer, text
-    
-        # Adiciona a nova coluna 'explaining_votes' com valor default 0
-        #with db.engine.connect() as conn:
-            #conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
+        try:
+            from sqlalchemy import Column, Integer, text
+        
+            # Adiciona a nova coluna 'explaining_votes' com valor default 0
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
+        except:
+            pass
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', host="0.0.0.0", port=80)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
