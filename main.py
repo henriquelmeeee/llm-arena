@@ -49,7 +49,7 @@ AIs = {
     # TODO add more here and update the HTML lists also
 }
 
-SUPPORTED_TOPICS = ["all", "coding", "explaining", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
+SUPPORTED_TOPICS = ["all", "following_instructions", "coding", "explaining", "resuming", "creative_writing", "data_analysis", "science", "history", "philosophy", "mathematics", "quantum_physics", "extreme"]
 
 class Output(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -73,6 +73,7 @@ class AI(db.Model):
     quantum_physics_votes = db.Column(db.Integer, default=0)
     extreme_votes = db.Column(db.Integer, default=0)
     explaining_votes = db.Column(db.Integer, default=0)
+    following_instruction_votes = db.Column(db.Integer, default=0)
 
 class Pairs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -105,6 +106,7 @@ def select_output(topic):
 
     # 1. Escolher todas as IAs que têm output para o tópico
     available_ai_ids = db.session.query(Output.ai_id).filter_by(topic=random_topic).distinct().all()
+    print(available_ai_ids)
     available_ai_ids = [ai_id for (ai_id,) in available_ai_ids]
 
     if len(available_ai_ids) < 2:
@@ -251,10 +253,11 @@ def statistics():
         AI.philosophy_votes,
         AI.mathematics_votes,
         AI.quantum_physics_votes,
+        AI.following_instruction_votes,
         AI.extreme_votes,
         (AI.coding_votes + AI.resuming_votes + AI.creative_writing_votes + 
          AI.data_analysis_votes + AI.science_votes + AI.history_votes + 
-         AI.philosophy_votes + AI.explaining_votes + AI.mathematics_votes + AI.quantum_physics_votes + 
+         AI.philosophy_votes + AI.explaining_votes + AI.following_instruction_votes + AI.mathematics_votes + AI.quantum_physics_votes + 
          AI.extreme_votes).label('total_votes')
     ).order_by(db.desc('total_votes')).all()
 
@@ -266,6 +269,7 @@ def statistics():
             'coding_votes': format_number(ai.coding_votes),
             'resuming_votes': format_number(ai.resuming_votes),
             'explaining_votes': format_number(ai.explaining_votes),
+            'following_instruction_votes': format_number(ai.following_instruction_votes),
             'creative_writing_votes': format_number(ai.creative_writing_votes),
             'data_analysis_votes': format_number(ai.data_analysis_votes),
             'science_votes': format_number(ai.science_votes),
@@ -374,7 +378,8 @@ if __name__ == '__main__':
         
             # Adiciona a nova coluna 'explaining_votes' com valor default 0
             with db.engine.connect() as conn:
-                conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
+                #conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
+                conn.execute(text('ALTER TABLE ai ADD COLUMN following_instruction_votes INTEGER DEFAULT 0'))
         except:
             pass
         init_db()
