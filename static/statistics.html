@@ -57,6 +57,12 @@
         #pointsChart {
             margin-top: 2rem;
         }
+        #attributeSelectors {
+            margin-bottom: 1rem;
+        }
+        #attributeSelectors label {
+            margin-right: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +78,22 @@
 
     <div class="container mt-5">
         <h1 class="text-center mb-4">Models Performance</h1>
+        
+        <div id="attributeSelectors">
+            <label><input type="checkbox" name="attribute" value="coding" checked> Programming</label>
+            <label><input type="checkbox" name="attribute" value="resuming" checked> Resumes</label>
+            <label><input type="checkbox" name="attribute" value="explaining" checked> Explaining</label>
+            <label><input type="checkbox" name="attribute" value="following_instruction" checked> Following Instructions</label>
+            <label><input type="checkbox" name="attribute" value="creative_writing" checked> Creative Writing</label>
+            <label><input type="checkbox" name="attribute" value="data_analysis" checked> Data Analysis</label>
+            <label><input type="checkbox" name="attribute" value="science" checked> Science</label>
+            <label><input type="checkbox" name="attribute" value="history" checked> History</label>
+            <label><input type="checkbox" name="attribute" value="philosophy" checked> Philosophy</label>
+            <label><input type="checkbox" name="attribute" value="mathematics" checked> Mathematics</label>
+            <label><input type="checkbox" name="attribute" value="quantum_physics" checked> Quantum Physics</label>
+            <label><input type="checkbox" name="attribute" value="extreme" checked> Extreme</label>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
@@ -82,12 +104,12 @@
                         <th scope="col">Details</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="aiTableBody">
                     {% for ai in stats %}
                     <tr>
                         <th scope="row">{{ loop.index }}</th>
                         <td>{{ ai.name }}</td>
-                        <td>{{ ai.total_votes }}</td>
+                        <td class="total-votes">{{ ai.total_votes }}</td>
                         <td>
                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#detailsModal{{ ai.id }}">
                                 Show Details
@@ -121,6 +143,8 @@
                         <tbody>
                             <tr><td>Programming</td><td>{{ ai.coding_votes }}</td></tr>
                             <tr><td>Resumes</td><td>{{ ai.resuming_votes }}</td></tr>
+                            <tr><td>Explaining</td><td>{{ ai.explaining_votes }}</td></tr>
+                            <tr><td>Following Instructions</td><td>{{ ai.following_instruction_votes }}</td></tr>
                             <tr><td>Creative Writing</td><td>{{ ai.creative_writing_votes }}</td></tr>
                             <tr><td>Data Analysis</td><td>{{ ai.data_analysis_votes }}</td></tr>
                             <tr><td>Science</td><td>{{ ai.science_votes }}</td></tr>
@@ -140,83 +164,124 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var ctx = document.getElementById('pointsChart').getContext('2d');
-            var data = {
-                datasets: [{
-                    label: 'AI comparison by graph',
-                    data: [
-                        {% for ai in stats %}
-                        {
-                            x: Math.log({{ ai.total_votes }}) * 10,
-                            y: {{ ai.total_votes }},
+            const stats = {{ stats | tojson | safe }};
+            let chart;
+
+            function updateData() {
+                const selectedAttributes = Array.from(document.querySelectorAll('input[name="attribute"]:checked')).map(cb => cb.value);
+                
+                const updatedStats = stats.map(ai => {
+                    const totalVotes = selectedAttributes.reduce((sum, attr) => sum + parseInt(ai[`${attr}_votes`].replace(/,/g, '')), 0);
+                    return { ...ai, total_votes: totalVotes };
+                });
+
+                updatedStats.sort((a, b) => b.total_votes - a.total_votes);
+
+                updateTable(updatedStats);
+                updateChart(updatedStats);
+            }
+
+            function updateTable(data) {
+                const tableBody = document.getElementById('aiTableBody');
+                tableBody.innerHTML = '';
+                data.forEach((ai, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <th scope="row">${index + 1}</th>
+                        <td>${ai.name}</td>
+                        <td class="total-votes">${ai.total_votes.toLocaleString()}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#detailsModal${ai.id}">
+                                Show Details
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function updateChart(data) {
+                const ctx = document.getElementById('pointsChart').getContext('2d');
+                
+                if (chart) {
+                    chart.destroy();
+                }
+
+                const chartData = {
+                    datasets: [{
+                        label: 'AI comparison by graph',
+                        data: data.map(ai => ({
+                            x: Math.log(ai.total_votes) * 10,
+                            y: ai.total_votes,
                             r: 10,
-                            label: '{{ ai.name }}'
+                            label: ai.name
+                        })),
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                    }]
+                };
+
+                const options = {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Votes (logarithm)'
+                            }
                         },
-                        {% endfor %}
-                    ],
-                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                    borderColor: 'rgba(0, 123, 255, 1)',
-                }]
-            };
-            var options = {
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: {
-                            display: true,
-                            text: 'Votes (logarithm)'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Votes'
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.raw.label + ': ' + context.raw.y + ' votes';
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Votes'
                             }
                         }
                     },
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        formatter: function(value, context) {
-                            return context.dataset.data[context.dataIndex].label;
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw.label + ': ' + context.raw.y.toLocaleString() + ' votes';
+                                }
+                            }
                         },
-                        font: {
-                            weight: 'bold',
-                            size: 12
-                        },
-                        color: 'rgba(0, 0, 0, 0.7)',
-                        offset: 5,
-                        display: function(context) {
-                            var dataset = context.dataset;
-                            var count = dataset.data.length;
-                            var value = dataset.data[context.dataIndex];
-                            return count <= 1 || isIsolatedPoint(value, dataset.data);
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value, context) {
+                                return context.dataset.data[context.dataIndex].label;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            color: 'rgba(0, 0, 0, 0.7)',
+                            offset: 5,
+                            display: function(context) {
+                                const dataset = context.dataset;
+                                const count = dataset.data.length;
+                                const value = dataset.data[context.dataIndex];
+                                return count <= 1 || isIsolatedPoint(value, dataset.data);
+                            }
                         }
                     }
-                }
-            };
-            Chart.register(ChartDataLabels);
-            new Chart(ctx, {
-                type: 'bubble',
-                data: data,
-                options: options
-            });
-    
+                };
+
+                Chart.register(ChartDataLabels);
+                chart = new Chart(ctx, {
+                    type: 'bubble',
+                    data: chartData,
+                    options: options
+                });
+            }
+
             function isIsolatedPoint(point, allPoints) {
-                var threshold = 5;
-                for (var i = 0; i < allPoints.length; i++) {
-                    var otherPoint = allPoints[i];
+                const threshold = 5;
+                for (let i = 0; i < allPoints.length; i++) {
+                    const otherPoint = allPoints[i];
                     if (point !== otherPoint) {
-                        var distance = Math.sqrt(Math.pow(point.x - otherPoint.x, 2) + Math.pow(point.y - otherPoint.y, 2));
+                        const distance = Math.sqrt(Math.pow(point.x - otherPoint.x, 2) + Math.pow(point.y - otherPoint.y, 2));
                         if (distance < threshold) {
                             return false;
                         }
@@ -224,6 +289,12 @@
                 }
                 return true;
             }
+
+            document.querySelectorAll('input[name="attribute"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateData);
+            });
+
+            updateData();
         });
     </script>
 </body>
