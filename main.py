@@ -45,7 +45,9 @@ AIs = {
 
     15: "Mixtral-8x22B-Instruct-v0.1",
     16: "Mixtral-8x7B-Instruct-v0.1",
-    17: "Openchat-3.6-8b"
+    17: "Openchat-3.6-8b",
+    30: "Reflection-Llama-3.1-70B",
+
     # TODO add more here and update the HTML lists also
 }
 
@@ -376,11 +378,12 @@ if __name__ == '__main__':
         try:
             from sqlalchemy import Column, Integer, text
         
-            # Adiciona a nova coluna 'explaining_votes' com valor default 0
             with db.engine.connect() as conn:
                 #conn.execute(text('ALTER TABLE ai ADD COLUMN explaining_votes INTEGER DEFAULT 0'))
-                conn.execute(text('ALTER TABLE ai ADD COLUMN following_instruction_votes INTEGER DEFAULT 0'))
-        except:
-            pass
+                #conn.execute(text('ALTER TABLE ai ADD COLUMN following_instruction_votes INTEGER DEFAULT 0'))
+                #conn.execute(text('INSERT INTO ai VALUES ("Reflection-Llama-3.1-70B", 30, "a", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)'))
+                print("a")
+        except Exception as e:
+            print("ERRO")
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host="0.0.0.0")
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
