@@ -386,4 +386,4 @@ if __name__ == '__main__':
         except Exception as e:
             print("ERRO")
         init_db()
-    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
+    app.run(debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true', port=80, host='0.0.0.0')
